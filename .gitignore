@@ -1,0 +1,9 @@
+.idea/
+**/target/
+**/*.log
+hmnginx-1.18.0/logs/
+hmnginx-1.18.0/temp/
+hmnginx-1.18.0/contrib/
+hmnginx-1.18.0/docs/
+hmnginx-1.18.0/nginx.exe
+hmnginx-1.18.0/html/hmdp/.git/

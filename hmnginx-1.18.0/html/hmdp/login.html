@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
@@ -13,25 +13,26 @@
   <div class="login-container">
     <div class="header">
       <div class="header-back-btn" @click="goBack"><i class="el-icon-arrow-left"></i></div>
-      <div class="header-title">账号密码登录&nbsp;&nbsp;&nbsp;</div>
+      <div class="header-title">账号密码登录</div>
     </div>
     <div class="content">
       <div class="login-form">
         <el-input placeholder="请输入账号" v-model="form.phone" @keyup.enter.native="login"></el-input>
         <div style="height: 5px"></div>
         <el-input placeholder="请输入密码" type="password" v-model="form.password" @keyup.enter.native="login"></el-input>
-        <div style="text-align: center; color: #8c939d;margin: 5px 0">默认账号：admin，密码：123456</div>
-        <el-button @click="login" style="width: 100%; background-color:#f63; color: #fff;">登录</el-button>
+        <div style="text-align: center; color: #8c939d; margin: 5px 0">默认账号：admin，密码：123456</div>
+        <el-button @click="login" style="width: 100%; background-color: #f63; color: #fff;">登录</el-button>
       </div>
       <div class="login-radio">
         <div>
-          <input type="radio" name="readed" v-model="radio" value="1">
+          <input id="readed" type="radio" name="readed" v-model="radio" value="1">
           <label for="readed"></label>
         </div>
-        <div>我已阅读并同意
+        <div>
+          我已阅读并同意
           <a href="javascript:void(0)">《黑马点评用户服务协议》</a>、
           <a href="javascript:void(0)">《隐私政策》</a>
-          等，接受免除或者限制责任、诉讼管辖约定等粗体标示条款
+          等，接受免责或者限制责任、诉讼管辖约定等粗体标示条款
         </div>
       </div>
     </div>
@@ -54,19 +55,16 @@
     },
     methods: {
       login() {
-        // 协议确认后才允许登录
         if (!this.radio) {
-          this.$message.error("请先确认阅读用户协议");
+          this.$message.error("请先勾选用户协议");
           return;
         }
-        // 账号密码不能为空
         if (!this.form.phone || !this.form.password) {
           this.$message.error("账号和密码不能为空");
           return;
         }
-        // 使用账号密码登录，后端仍复用 phone 字段作为账号字段
         axios.post("/user/login", this.form)
-          .then(({data}) => {
+          .then(({ data }) => {
             if (data) {
               sessionStorage.setItem("token", data);
             }

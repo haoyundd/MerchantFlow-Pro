@@ -1,0 +1,73 @@
+services:
+  mysql:
+    image: mysql:5.7
+    container_name: merchantflow-mysql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --lower_case_table_names=1
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: hmdp
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    container_name: merchantflow-redis
+    command: ["redis-server", "--requirepass", "202167", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "202167", "PING"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./hm-dianping
+      dockerfile: Dockerfile
+    container_name: merchantflow-backend
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: hmdp
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: 123456
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: 202167
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: merchantflow-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./hmnginx-1.18.0/html/hmdp:/usr/share/nginx/html:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+  redis-data:

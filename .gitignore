@@ -1,6 +1,8 @@
 .idea/
 **/target/
 **/*.log
+dump.rdb
+backups/
 hmnginx-1.18.0/logs/
 hmnginx-1.18.0/temp/
 hmnginx-1.18.0/contrib/

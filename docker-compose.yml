@@ -56,7 +56,7 @@ services:
 
   backend:
     build:
-      context: ./hm-dianping
+      context: .
       dockerfile: Dockerfile
     container_name: merchantflow-backend
     environment:

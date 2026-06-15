@@ -21,7 +21,7 @@
 ## 📁 项目结构
 
 ```
-hm-dianping/
+.
 ├── docker/                          # Docker 配置
 │   ├── mysql/init/                  # 数据库初始化 SQL
 │   │   ├── 01_hmdp.sql              # 建表 + 示例数据
@@ -30,25 +30,24 @@ hm-dianping/
 │   └── rocketmq/broker.conf         # RocketMQ Broker 配置
 ├── docker-compose.yml               # 一键部署编排
 ├── hmnginx-1.18.0/html/hmdp/        # 前端静态资源
-├── hm-dianping/                     # 后端 Spring Boot 工程
-│   ├── src/main/java/com/hmdp/
-│   │   ├── annotation/              # 自定义注解（@RateLimit、@AkSkAuth）
-│   │   ├── aspect/                  # AOP 切面（限流、AK/SK 认证）
-│   │   ├── config/                  # 配置类（缓存、MVC、MyBatis、Redisson、Chat）
-│   │   ├── controller/              # REST 控制器（含 ChatController）
-│   │   ├── dto/                     # 数据传输对象
-│   │   ├── entity/                  # 数据实体
-│   │   ├── mapper/                  # MyBatis Mapper
-│   │   ├── mq/                      # RocketMQ 生产者 & 消费者
-│   │   ├── service/                 # 业务接口 & 实现（含 ChatService）
-│   │   ├── task/                    # 定时任务
-│   │   └── utils/                   # 工具类（缓存客户端、分布式锁、ID 生成器、拦截器）
-│   ├── src/main/resources/
-│   │   ├── application.yaml         # 主配置
-│   │   ├── seckill.lua              # 秒杀 Lua 脚本
-│   │   └── unlock.lua               # 分布式锁解锁 Lua 脚本
-│   └── Dockerfile                   # 后端容器镜像
-└── tasks/                           # 开发任务 & 验证记录
+├── src/main/java/com/hmdp/
+│   ├── annotation/                  # 自定义注解（@RateLimit、@AkSkAuth）
+│   ├── aspect/                      # AOP 切面（限流、AK/SK 认证）
+│   ├── config/                      # 配置类（缓存、MVC、MyBatis、Redisson、Chat）
+│   ├── controller/                  # REST 控制器（含 ChatController）
+│   ├── dto/                         # 数据传输对象
+│   ├── entity/                      # 数据实体
+│   ├── mapper/                      # MyBatis Mapper
+│   ├── mq/                          # RocketMQ 生产者 & 消费者
+│   ├── service/                     # 业务接口 & 实现（含 ChatService）
+│   ├── task/                        # 定时任务
+│   └── utils/                       # 工具类（缓存客户端、分布式锁、ID 生成器、拦截器）
+├── src/main/resources/
+│   ├── application.yaml             # 主配置
+│   ├── seckill.lua                  # 秒杀 Lua 脚本
+│   └── unlock.lua                   # 分布式锁解锁 Lua 脚本
+├── Dockerfile                       # 后端容器镜像
+└── pom.xml                          # Maven 配置
 ```
 
 ## ✨ 核心亮点

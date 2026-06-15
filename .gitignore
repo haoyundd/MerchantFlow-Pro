@@ -1,6 +1,15 @@
 .idea/
 **/target/
 **/*.log
+*.iml
+*.iws
+*.ipr
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 dump.rdb
 backups/
 hmnginx-1.18.0/logs/

@@ -29,7 +29,9 @@
 │   ├── nginx/default.conf           # Nginx 反向代理配置
 │   └── rocketmq/broker.conf         # RocketMQ Broker 配置
 ├── docker-compose.yml               # 一键部署编排
-├── hmnginx-1.18.0/html/hmdp/        # 前端静态资源
+
+![img.png](img.png)
+├── frontend/                        # 前端静态资源（HTML/CSS/JS）
 ├── src/main/java/com/hmdp/
 │   ├── annotation/                  # 自定义注解（@RateLimit、@AkSkAuth）
 │   ├── aspect/                      # AOP 切面（限流、AK/SK 认证）

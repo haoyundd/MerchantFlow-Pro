@@ -1,6 +1,8 @@
 package com.hmdp.controller;
 
 
+import com.hmdp.annotation.RateLimit;
+import com.hmdp.annotation.RateLimitType;
 import com.hmdp.dto.Result;
 import com.hmdp.service.IVoucherOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ public class VoucherOrderController {
     @Resource
     private IVoucherOrderService voucherOrderService;
     @PostMapping("seckill/{id}")
+    @RateLimit(max = 5, windowSeconds = 10, type = RateLimitType.USER)
     public Result seckillVoucher(@PathVariable("id") Long voucherId) {
         return voucherOrderService.seckillVoucher(voucherId);
     }

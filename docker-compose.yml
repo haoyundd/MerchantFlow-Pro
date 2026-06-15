@@ -35,6 +35,25 @@ services:
       timeout: 5s
       retries: 20
 
+  rocketmq-namesrv:
+    image: apache/rocketmq:4.9.7
+    container_name: merchantflow-rocketmq-namesrv
+    command: ["sh", "mqnamesrv"]
+    ports:
+      - "9876:9876"
+
+  rocketmq-broker:
+    image: apache/rocketmq:4.9.7
+    container_name: merchantflow-rocketmq-broker
+    command: ["sh", "-c", "export JAVA_OPT_EXT='-server -Xms256m -Xmx256m -Xmn128m'; ./mqbroker -c /tmp/broker.conf"]
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    volumes:
+      - ./docker/rocketmq/broker.conf:/tmp/broker.conf:ro
+    depends_on:
+      - rocketmq-namesrv
+
   backend:
     build:
       context: ./hm-dianping
@@ -46,9 +65,14 @@ services:
       MYSQL_DATABASE: hmdp
       MYSQL_USERNAME: root
       MYSQL_PASSWORD: 123456
+      TZ: Asia/Shanghai
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: 202167
+      ROCKETMQ_NAME_SERVER: rocketmq-namesrv:9876
+      AKSK_ACCESS_KEY: merchantflow-ak
+      AKSK_SECRET_KEY: merchantflow-sk
+      CACHE_REDIS_DELETE_FORCE_FAIL: ${CACHE_REDIS_DELETE_FORCE_FAIL:-false}
     ports:
       - "8081:8081"
     depends_on:
@@ -56,6 +80,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
 
   nginx:
     image: nginx:1.25-alpine

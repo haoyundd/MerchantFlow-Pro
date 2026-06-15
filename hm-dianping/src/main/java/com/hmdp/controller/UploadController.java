@@ -2,6 +2,8 @@ package com.hmdp.controller;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
+import com.hmdp.annotation.RateLimit;
+import com.hmdp.annotation.RateLimitType;
 import com.hmdp.dto.Result;
 import com.hmdp.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class UploadController {
 
     @PostMapping("blog")
+    @RateLimit(max = 10, windowSeconds = 60, type = RateLimitType.USER)
     public Result uploadImage(@RequestParam("file") MultipartFile image) {
         try {
             // 获取原始文件名称

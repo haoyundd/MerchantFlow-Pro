@@ -5,7 +5,7 @@ spring:
     name: hmdp
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:hmdp}?useSSL=false&serverTimezone=UTC&characterEncoding=utf8
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:hmdp}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:123456}
   redis:
@@ -20,6 +20,34 @@ spring:
         time-between-eviction-runs: 10s
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:127.0.0.1:9876}
+  producer:
+    group: ${ROCKETMQ_PRODUCER_GROUP:hmdp-cache-delete-producer}
+hmdp:
+  seckill:
+    order-topic: ${SECKILL_ORDER_TOPIC:seckill-order-topic}
+  cache:
+    delete-topic: ${CACHE_DELETE_TOPIC:cache-delete-compensation-topic}
+    redis-delete-force-fail: ${CACHE_REDIS_DELETE_FORCE_FAIL:false}
+  aksk:
+    access-key: ${AKSK_ACCESS_KEY:merchantflow-ak}
+    secret-key: ${AKSK_SECRET_KEY:merchantflow-sk}
+    nonce-ttl-seconds: ${AKSK_NONCE_TTL_SECONDS:300}
+    timestamp-tolerance-seconds: ${AKSK_TIMESTAMP_TOLERANCE_SECONDS:300}
+  order:
+    timeout-minutes: ${ORDER_TIMEOUT_MINUTES:15}
+    timeout-scan-delay-ms: ${ORDER_TIMEOUT_SCAN_DELAY_MS:60000}
+  chat:
+    model:
+      base-url: ${CHAT_MODEL_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode/v1}
+      api-key: ${CHAT_MODEL_API_KEY:}
+      model-name: ${CHAT_MODEL_NAME:qwen-plus}
+      temperature: 0.7
+      max-tokens: 1024
+    session:
+      ttl-minutes: 30
+      max-history: 20
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
 logging:

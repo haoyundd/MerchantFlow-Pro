@@ -1,6 +1,8 @@
 package com.hmdp.controller;
 
 
+import com.hmdp.annotation.RateLimit;
+import com.hmdp.annotation.RateLimitType;
 import com.hmdp.dto.Result;
 import com.hmdp.service.IFollowService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,7 @@ public class FollowController {
 @Resource
 private IFollowService followService;
     @PutMapping("/{id}/{isFollow}")
+    @RateLimit(max = 30, windowSeconds = 60, type = RateLimitType.USER)
     public Result follow(@PathVariable("id") Long followUserId, @PathVariable("isFollow") Boolean isFollow) {
         return followService.follow(followUserId,isFollow);
 

@@ -3,6 +3,7 @@ package com.hmdp.controller;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hmdp.annotation.AkSkAuth;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
 import com.hmdp.service.IShopService;
@@ -43,6 +44,7 @@ public class ShopController {
      * @return 商铺id
      */
     @PostMapping
+    @AkSkAuth
     public Result saveShop(@RequestBody Shop shop) {
         // 写入数据库
         shopService.save(shop);
@@ -56,6 +58,7 @@ public class ShopController {
      * @return 无
      */
     @PutMapping
+    @AkSkAuth
     public Result updateShop(@RequestBody Shop shop) {
         // 写入数据库
 

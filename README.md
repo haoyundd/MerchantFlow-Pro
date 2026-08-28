@@ -1,5 +1,17 @@
 # 🏪智慧商家运营平台
 
+> 本仓库同时是 [AIOps Incident Agent](https://github.com/haoyundd/haoyundd) 的首个真实观测目标。业务仍是 Java 8 / Spring Boot 2.3 单体应用；新增内容仅包括 Actuator/Micrometer 指标、结构化日志、请求 ID、OpenTelemetry Java Agent 和独立故障实验室，不改变商城、缓存、秒杀和 MQ 架构。
+
+## 🔭 可观测性与 AIOps 接入
+
+- `/actuator/health`：MySQL、Redis 与应用健康状态。
+- `/actuator/prometheus`：JVM、进程 CPU、线程、内存、连接池和 HTTP RED 指标。
+- JSON stdout：包含 `service_name`、`environment`、`request_id`、`trace_id`、`span_id`。
+- OpenTelemetry Java Agent：自动采集 HTTP、Redis、MySQL 等 Span，通过 OTLP 发往 Grafana Alloy/Tempo。
+- `docker-compose.lab.yml`：用真实 CPU 配额、k6 与 Toxiproxy 复现 CPU 饱和、Redis 延迟和依赖中断。
+
+普通 Compose 直接连接 MySQL/Redis，不包含故障控制。lab overlay 只允许在隔离的本地环境中使用。
+
 基于 **Spring Boot** 的本地生活服务平台，整合**商家信息管理**、**秒杀下单**、**智能营销**、**AI 咨询**等核心功能，适配个人开发场景，采用 Docker Compose 一键部署。
 
 ## 🛠 技术栈
@@ -119,12 +131,16 @@
 ### 一键部署
 
 ```bash
-# 克隆项目
-git clone https://github.com/your-username/hm-dianping.git
-cd hm-dianping
+# AIOps Compose 先创建共享网络 aiops-observe
+cd ../haoyundd
+docker compose -f docker-compose.incident.yml up -d
+
+cd ../MerchantFlow-Pro
+cp .env.example .env
+# 编辑 .env，设置唯一密码和 AK/SK
 
 # Docker Compose 启动全部服务（MySQL + Redis + RocketMQ + 后端 + Nginx）
-docker compose up -d
+docker compose up -d --build
 
 # 查看服务状态
 docker compose ps
@@ -133,7 +149,8 @@ docker compose ps
 服务启动后：
 - 前端页面：`http://localhost:8080`
 - 后端 API（通过 Nginx 代理）：`http://localhost:8080/api/xxx`
-- 默认管理员账号：`admin` / 密码：`123456`
+- 健康检查：`http://localhost:8081/actuator/health`
+- Prometheus 指标：`http://localhost:8081/actuator/prometheus`
 
 ### 本地开发
 
@@ -176,19 +193,22 @@ mvn spring-boot:run
 | `MYSQL_PORT` | `3306` | MySQL 端口 |
 | `MYSQL_DATABASE` | `hmdp` | 数据库名 |
 | `MYSQL_USERNAME` | `root` | MySQL 用户名 |
-| `MYSQL_PASSWORD` | `123456` | MySQL 密码 |
+| `MYSQL_PASSWORD` | 无 | MySQL 密码，Compose 启动前必须设置 |
 | `REDIS_HOST` | `127.0.0.1` | Redis 主机 |
 | `REDIS_PORT` | `6380` | Redis 端口 |
-| `REDIS_PASSWORD` | `202167` | Redis 密码 |
+| `REDIS_PASSWORD` | 无 | Redis 密码，Compose 启动前必须设置 |
 | `ROCKETMQ_NAME_SERVER` | `127.0.0.1:9876` | RocketMQ NameServer |
 | `CACHE_REDIS_DELETE_FORCE_FAIL` | `false` | 缓存删除故障注入开关 |
-| `AKSK_ACCESS_KEY` | `merchantflow-ak` | AK/SK 签名 AccessKey |
-| `AKSK_SECRET_KEY` | `merchantflow-sk` | AK/SK 签名 SecretKey |
+| `AKSK_ACCESS_KEY` | 无 | AK/SK 签名 AccessKey |
+| `AKSK_SECRET_KEY` | 无 | AK/SK 签名 SecretKey |
 | `ORDER_TIMEOUT_MINUTES` | `15` | 订单超时分钟数 |
 | `ORDER_TIMEOUT_SCAN_DELAY_MS` | `60000` | 超时扫描间隔（毫秒） |
 | `CHAT_MODEL_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | AI 模型 API 地址 |
 | `CHAT_MODEL_API_KEY` | 空 | AI 模型 API Key |
 | `CHAT_MODEL_NAME` | `qwen-plus` | AI 模型名称 |
+| `DEPLOYMENT_ENVIRONMENT` | `local` | 日志、指标和 Trace 的环境标签 |
+| `MERCHANTFLOW_CPUS` | `1.0` | 普通 Compose 的后端 CPU 配额 |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | `http://alloy:4317` | OpenTelemetry OTLP 接收端 |
 
 ## 📊 数据库表
 

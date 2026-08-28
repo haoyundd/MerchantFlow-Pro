@@ -1,0 +1,52 @@
+services:
+  toxiproxy:
+    image: shopify/toxiproxy:2.12.0
+    container_name: merchantflow-toxiproxy
+    ports:
+      - "8474:8474"
+      - "13306:13306"
+      - "16379:16379"
+    networks: [merchantflow-internal, aiops-observe]
+
+  proxy-init:
+    image: curlimages/curl:8.15.0
+    profiles: [lab]
+    depends_on:
+      - toxiproxy
+      - mysql
+      - redis
+    command:
+      - /bin/sh
+      - -ec
+      - |
+        until curl -fsS http://toxiproxy:8474/version; do sleep 1; done
+        curl -fsS -X POST http://toxiproxy:8474/proxies -H 'Content-Type: application/json' \
+          -d '{"name":"mysql","listen":"0.0.0.0:13306","upstream":"mysql:3306","enabled":true}' || true
+        curl -fsS -X POST http://toxiproxy:8474/proxies -H 'Content-Type: application/json' \
+          -d '{"name":"redis","listen":"0.0.0.0:16379","upstream":"redis:6379","enabled":true}' || true
+    networks: [merchantflow-internal]
+
+  backend:
+    cpus: 0.25
+    environment:
+      MYSQL_HOST: toxiproxy
+      MYSQL_PORT: 13306
+      REDIS_HOST: toxiproxy
+      REDIS_PORT: 16379
+      DEPLOYMENT_ENVIRONMENT: lab
+    depends_on:
+      proxy-init:
+        condition: service_completed_successfully
+
+  k6:
+    image: grafana/k6:1.2.3
+    profiles: [lab]
+    volumes:
+      - ./lab/k6:/scripts:ro
+    environment:
+      TARGET_URL: http://backend:8081
+    command: ["run", "/scripts/cpu-saturation.js"]
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks: [merchantflow-internal]

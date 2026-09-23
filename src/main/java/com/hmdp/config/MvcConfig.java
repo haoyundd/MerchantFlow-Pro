@@ -26,7 +26,13 @@ public class MvcConfig implements WebMvcConfigurer {
                         "/shop/**",
                         "/voucher/**",
                         "/shop-type/**",
-                        "/upload/**"
+                        "/upload/**",
+                        // 内部运维接口使用独立 AK/SK + nonce 认证，不能再要求普通用户 Token；
+                        // 下一步仍会进入 Controller 上的 @AkSkAuth 和全局限流切面。
+                        "/internal/ops/**",
+                        // Lab Controller 自带独立实验令牌，且 Bean 只在 lab Profile 注册；
+                        // 基础环境中该路径没有 Controller，直接返回 404。
+                        "/internal/lab/**"
                 )
                 .order(1);
 

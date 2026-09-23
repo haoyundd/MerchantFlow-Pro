@@ -1,11 +1,9 @@
 package com.hmdp.task;
 
 import com.hmdp.entity.VoucherOrder;
-import com.hmdp.service.ISeckillVoucherService;
 import com.hmdp.service.IVoucherOrderService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +11,6 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.hmdp.utils.RedisConstants.SECKILL_ORDER_KEY;
-import static com.hmdp.utils.RedisConstants.SECKILL_STOCK_KEY;
 
 @Slf4j
 @Component
@@ -25,12 +21,6 @@ public class VoucherOrderTimeoutTask {
 
     @Resource
     private IVoucherOrderService voucherOrderService;
-
-    @Resource
-    private ISeckillVoucherService seckillVoucherService;
-
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
 
     @Value("${hmdp.order.timeout-minutes}")
     private long timeoutMinutes;
@@ -50,29 +40,11 @@ public class VoucherOrderTimeoutTask {
     }
 
     private void cancelOneOrder(VoucherOrder order) {
-        // 状态更新带上 status=1 条件，防止支付线程和定时取消线程并发时重复处理。
-        boolean canceled = voucherOrderService.update()
-                .set("status", STATUS_CANCELED)
-                .eq("id", order.getId())
-                .eq("status", STATUS_UNPAID)
-                .update();
-        if (!canceled) {
-            return;
-        }
-
-        // 订单取消成功后回补 MySQL 秒杀库存。
-        seckillVoucherService.update()
-                .setSql("stock = stock + 1")
-                .eq("voucher_id", order.getVoucherId())
-                .update();
-
-        // Redis 库存和一人一单集合也要回补，保证下次秒杀判断和数据库一致。
         try {
-            stringRedisTemplate.opsForValue().increment(SECKILL_STOCK_KEY + order.getVoucherId());
-            stringRedisTemplate.opsForSet()
-                    .remove(SECKILL_ORDER_KEY + order.getVoucherId(), order.getUserId().toString());
+            // 服务层事务同时负责状态更新和补偿；失败时保留未支付状态等待下一轮重试。
+            voucherOrderService.cancelTimeoutOrder(order.getId());
         } catch (Exception e) {
-            log.error("超时订单 Redis 库存回补失败，orderId={}", order.getId(), e);
+            log.error("超时订单取消或库存回补失败，orderId={}", order.getId(), e);
         }
         log.info("已取消超时订单并回补库存，orderId={}, voucherId={}", order.getId(), order.getVoucherId());
     }

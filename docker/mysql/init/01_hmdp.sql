@@ -346,7 +346,8 @@ CREATE TABLE `tb_voucher_order` (
   `use_time` timestamp NULL DEFAULT NULL COMMENT '核销时间',
   `refund_time` timestamp NULL DEFAULT NULL COMMENT '退款时间',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_voucher_order_user_voucher` (`user_id`,`voucher_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

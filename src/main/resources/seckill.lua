@@ -18,7 +18,12 @@ local orderKey = 'seckill:order:' .. voucherId
 
 -- 3. 脚本业务
 -- 3.1. 判断库存是否充足
-if(tonumber(redis.call('get', stockKey)) <= 0) then
+local stock = redis.call('get', stockKey)
+-- 缓存没有预热时不能让 tonumber(nil) 触发 Lua 异常，交给 Java 层返回可识别错误。
+if(stock == false) then
+    return 3
+end
+if(tonumber(stock) <= 0) then
     -- 3.2. 库存不足，返回1
     return 1
 end

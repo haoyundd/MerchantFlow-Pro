@@ -126,6 +126,38 @@
 
     <build>
         <plugins>
+            <!-- 测试启动前读取本机 .env；密码只注入 Surefire，不写入 application-test.yaml。 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <executions>
+                    <execution>
+                        <id>load-local-env-for-tests</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Docker 构建阶段不会携带本机 .env，缺少时安静跳过；本地测试仍会正常加载。 -->
+                            <quiet>true</quiet>
+                            <files>
+                                <file>${project.basedir}/.env</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <TEST_MYSQL_PASSWORD>${MYSQL_PASSWORD}</TEST_MYSQL_PASSWORD>
+                        <TEST_REDIS_PASSWORD>${REDIS_PASSWORD}</TEST_REDIS_PASSWORD>
+                    </systemPropertyVariables>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

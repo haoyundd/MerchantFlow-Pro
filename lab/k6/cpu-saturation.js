@@ -16,11 +16,18 @@ export const options = {
 };
 
 const target = __ENV.TARGET_URL || 'http://backend:8081';
+const scenarioToken = __ENV.LAB_SCENARIO_TOKEN || '';
 
 export default function () {
-  const response = http.get(`${target}/shop-type/list`, {
-    headers: { 'X-Request-ID': `k6-${__VU}-${__ITER}` },
+  // 调用仅 Lab Profile 存在的有界 CPU 接口；每次最多运行 1 秒且不分配大对象。
+  // 下一步：Prometheus 同时观察该 URI 的 P95 与 JVM process_cpu_usage。
+  const response = http.post(`${target}/internal/lab/cpu?durationMs=1000`, null, {
+    headers: {
+      'X-Request-ID': `k6-cpu-${__VU}-${__ITER}`,
+      'X-Lab-Scenario-Token': scenarioToken,
+    },
+    tags: { lab_scenario: 'cpu-saturation' },
   });
-  check(response, { 'business endpoint responded': (res) => res.status === 200 });
-  sleep(0.05);
+  check(response, { 'bounded CPU endpoint responded': (res) => res.status === 200 });
+  sleep(0.02);
 }

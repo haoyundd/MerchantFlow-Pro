@@ -9,11 +9,13 @@ import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import javax.annotation.Resource;
 
 @Slf4j
 @Component
+@Profile("!test")
 @RocketMQMessageListener(
         topic = "${hmdp.cache.delete-topic}",
         consumerGroup = "hmdp-cache-delete-consumer",

@@ -85,49 +85,28 @@
     <div class="blog-divider"></div>
     <div class="blog-comments">
       <div class="comments-head">
-        <div>网友评价 <span>（119）</span></div>
+        <div>网友评价 <span>（{{commentTotal}}）</span></div>
         <div><i class="el-icon-arrow-right"></i></div>
       </div>
+      <div style="padding: 10px 0;" v-if="user && user.id">
+        <el-input v-model="commentContent" type="textarea" :rows="2" maxlength="255"
+                  placeholder="写下你的真实体验"></el-input>
+        <el-button type="primary" size="mini" style="margin-top: 8px" @click="submitComment">发表评论</el-button>
+      </div>
       <div class="comment-list">
-        <div class="comment-box" v-for="i in 3" :key="i">
+        <div class="comment-box" v-for="comment in comments" :key="comment.id">
           <div class="comment-icon">
-            <img
-                src="https://p0.meituan.net/userheadpicbackend/57e44d6eba01aad0d8d711788f30a126549507.jpg%4048w_48h_1e_1c_1l%7Cwatermark%3D0"
-                alt="">
+            <img :src="comment.userIcon || '/imgs/icons/default-icon.png'" alt="">
           </div>
           <div class="comment-info">
-            <div class="comment-user">叶小乙 <span>Lv5</span></div>
-            <div style="display: flex;">
-              打分
-              <el-rate disabled v-model="4.5"></el-rate>
-            </div>
-            <div style="padding: 5px 0; font-size: 14px">
-              某平台上买的券，价格可以当工作餐吃，虽然价格便宜，但是这家店一点都没有...
-            </div>
-            <div class="comment-images">
-              <img
-                  src="https://qcloud.dpfile.com/pc/6T7MfXzx7USPIkSy7jzm40qZSmlHUF2jd-FZUL6WpjE9byagjLlrseWxnl1LcbuSGybIjx5eX6WNgCPvcASYAw.jpg"
-                  alt="">
-              <img
-                  src="https://qcloud.dpfile.com/pc/sZ5q-zgglv4VXEWU71xCFjnLM_jUHq-ylq0GKivtrz3JksWQ1f7oBWZsxm1DWgcaGybIjx5eX6WNgCPvcASYAw.jpg"
-                  alt="">
-              <img
-                  src="https://qcloud.dpfile.com/pc/xZy6W4NwuRFchlOi43DVLPFsx7KWWvPqifE1JTe_jreqdsBYA9CFkeSm2ZlF0OVmGybIjx5eX6WNgCPvcASYAw.jpg"
-                  alt="">
-              <img
-                  src="https://qcloud.dpfile.com/pc/xZy6W4NwuRFchlOi43DVLPFsx7KWWvPqifE1JTe_jreqdsBYA9CFkeSm2ZlF0OVmGybIjx5eX6WNgCPvcASYAw.jpg"
-                  alt="">
-            </div>
-            <div>
-              浏览641 &nbsp;&nbsp;&nbsp;&nbsp;评论5
-            </div>
+            <div class="comment-user">{{comment.userName}}</div>
+            <div style="padding: 5px 0; font-size: 14px">{{comment.content}}</div>
+            <div style="color: #999; font-size: 12px">{{formatTime(new Date(comment.createTime))}} · {{comment.liked}} 人点赞</div>
+            <el-button type="text" size="mini" @click="likeComment(comment)">{{comment.isLike ? '取消点赞' : '点赞'}}</el-button>
+            <el-button type="text" size="mini" v-if="user && user.id === comment.userId" @click="deleteComment(comment)">删除</el-button>
           </div>
         </div>
-        <div
-            style="display: flex; justify-content: space-between;padding: 15px 0; border-top: 1px solid #f1f1f1; margin-top: 10px;">
-          <div>查看全部119条评价</div>
-          <div><i class="el-icon-arrow-right"></i></div>
-        </div>
+        <div v-if="!comments.length" style="padding: 20px 0; color: #999">还没有评论，来发表第一条吧</div>
       </div>
     </div>
     <div class="blog-divider"></div>
@@ -168,6 +147,9 @@
       likes: [],
       user: {}, // 登录用户
       followed: false, // 是否关注了
+      comments: [],
+      commentTotal: 0,
+      commentContent: '',
       _width: 0,
       duration: 300,
       container: null,
@@ -216,6 +198,7 @@
             this.$nextTick(this.init);
             this.queryShopById(data.shopId)
             this.queryLikeList(id);
+            this.queryComments(id);
             this.queryLoginUser();
           })
           .catch(this.$message.error)
@@ -231,6 +214,41 @@
       queryLikeList(id){
         axios.get("/blog/likes/" + id)
           .then(({data}) => this.likes = data)
+          .catch(this.$message.error)
+      },
+      // 评论数据从后端加载，避免页面继续展示硬编码的假评论。
+      queryComments(id){
+        axios.get('/blog-comments/blog/' + id)
+          .then(({data}) => {
+            this.comments = data.data || [];
+            this.commentTotal = data.total || this.comments.length;
+          })
+          .catch(this.$message.error)
+      },
+      submitComment(){
+        if(!this.commentContent.trim()){
+          this.$message.error('评论内容不能为空');
+          return;
+        }
+        axios.post('/blog-comments', {blogId: this.blog.id, parentId: 0, answerId: 0, content: this.commentContent})
+          .then(() => {
+            this.commentContent = '';
+            this.queryComments(this.blog.id);
+            this.$message.success('评论成功');
+          })
+          .catch(this.$message.error)
+      },
+      likeComment(comment){
+        axios.put('/blog-comments/like/' + comment.id)
+          .then(() => this.queryComments(this.blog.id))
+          .catch(this.$message.error)
+      },
+      deleteComment(comment){
+        axios.delete('/blog-comments/' + comment.id)
+          .then(() => {
+            this.queryComments(this.blog.id);
+            this.$message.success('评论已删除');
+          })
           .catch(this.$message.error)
       },
       addLike(){

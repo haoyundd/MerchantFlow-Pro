@@ -13,9 +13,10 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static com.hmdp.utils.RedisConstants.CACHE_SHOP_KEY;
 import static com.hmdp.utils.RedisConstants.CACHE_TYPE_LIST;
+import static com.hmdp.utils.RedisConstants.CACHE_TYPE_LIST_TTL;
 
 /**
  * <p>
@@ -50,7 +51,13 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
         List<ShopType>  shopTypeList=query().orderByAsc("sort").list();
 
         // 5. 存在，写入redis
-        stringRedisTemplate.opsForValue().set(key,JSONUtil.toJsonStr(shopTypeList));
+        // 类型列表是派生缓存，必须有物理 TTL，避免数据库变更后永久读取旧列表。
+        stringRedisTemplate.opsForValue().set(
+                key,
+                JSONUtil.toJsonStr(shopTypeList),
+                CACHE_TYPE_LIST_TTL,
+                TimeUnit.MINUTES
+        );
 
         // 7. 返回
         return Result.ok(shopTypeList);

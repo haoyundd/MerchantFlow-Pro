@@ -1,6 +1,8 @@
 services:
   toxiproxy:
-    image: shopify/toxiproxy:2.12.0
+    # 新版官方镜像发布在 GHCR；当前 Docker Desktop 的 Docker Hub 加速源对旧地址返回 403。
+    # 下一步：proxy-init 创建 MySQL/Redis 代理，故障脚本再通过 8474 注入真实网络故障。
+    image: ghcr.io/shopify/toxiproxy:2.12.0
     container_name: merchantflow-toxiproxy
     ports:
       - "8474:8474"
@@ -29,6 +31,9 @@ services:
   backend:
     cpus: 0.25
     environment:
+      # 只有 Lab 覆盖层激活此 Profile，基础 Compose 中不会注册故障接口。
+      SPRING_PROFILES_ACTIVE: lab
+      LAB_SCENARIO_TOKEN: ${LAB_SCENARIO_TOKEN}
       MYSQL_HOST: toxiproxy
       MYSQL_PORT: 13306
       REDIS_HOST: toxiproxy
@@ -45,6 +50,10 @@ services:
       - ./lab/k6:/scripts:ro
     environment:
       TARGET_URL: http://backend:8081
+      LAB_SCENARIO_TOKEN: ${LAB_SCENARIO_TOKEN}
+      # Lab 登录凭据只从被 Git 忽略的 .env 注入，不允许固化到 k6 脚本或镜像。
+      LOGIN_ACCOUNT: ${LAB_LOGIN_ACCOUNT}
+      LOGIN_PASSWORD: ${LAB_LOGIN_PASSWORD}
     command: ["run", "/scripts/cpu-saturation.js"]
     depends_on:
       backend:

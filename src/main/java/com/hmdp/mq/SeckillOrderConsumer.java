@@ -10,11 +10,13 @@ import org.apache.rocketmq.spring.annotation.MessageModel;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
 import org.apache.rocketmq.spring.core.RocketMQListener;
 import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Profile;
 
 import javax.annotation.Resource;
 
 @Slf4j
 @Component
+@Profile("!test")
 @RocketMQMessageListener(
         topic = "${hmdp.seckill.order-topic}",
         consumerGroup = "hmdp-seckill-order-consumer",

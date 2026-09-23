@@ -2,7 +2,8 @@ server:
   port: 8081
 spring:
   application:
-    name: hmdp
+    # 下一步：Prometheus、Loki、Tempo 和 AIOps 都使用这个统一服务名。
+    name: merchantflow
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
     url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:hmdp}?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf8
@@ -52,11 +53,21 @@ hmdp:
   cache:
     delete-topic: ${CACHE_DELETE_TOPIC:cache-delete-compensation-topic}
     redis-delete-force-fail: ${CACHE_REDIS_DELETE_FORCE_FAIL:false}
+    # 启动和定时校准只重建可由 MySQL 推导出的业务缓存，不处理登录态等运行态 Key。
+    reconcile:
+      enabled: ${CACHE_RECONCILE_ENABLED:true}
+      delay-ms: ${CACHE_RECONCILE_DELAY_MS:300000}
   aksk:
     access-key: ${AKSK_ACCESS_KEY:merchantflow-ak}
     secret-key: ${AKSK_SECRET_KEY:merchantflow-sk}
     nonce-ttl-seconds: ${AKSK_NONCE_TTL_SECONDS:300}
     timestamp-tolerance-seconds: ${AKSK_TIMESTAMP_TOLERANCE_SECONDS:300}
+  ops:
+    thread-snapshot:
+      # 两次短采样只在 CPU 告警后触发；上限同时在 Java 服务和 MCP 客户端校验。
+      sample-interval-ms: ${OPS_THREAD_SAMPLE_INTERVAL_MS:200}
+      top-threads: ${OPS_THREAD_TOP_THREADS:10}
+      max-frames: ${OPS_THREAD_MAX_FRAMES:20}
   order:
     timeout-minutes: ${ORDER_TIMEOUT_MINUTES:15}
     timeout-scan-delay-ms: ${ORDER_TIMEOUT_SCAN_DELAY_MS:60000}
@@ -70,6 +81,14 @@ hmdp:
     session:
       ttl-minutes: 30
       max-history: 20
+    # 流式调用必须同时具备总时长、输出大小和排队上限，避免持续 SSE 占满线程和堆内存。
+    stream:
+      call-timeout-seconds: ${CHAT_CALL_TIMEOUT_SECONDS:150}
+      max-characters: ${CHAT_MAX_STREAM_CHARACTERS:32768}
+      max-events: ${CHAT_MAX_STREAM_EVENTS:1024}
+    executor:
+      pool-size: ${CHAT_EXECUTOR_POOL_SIZE:10}
+      queue-capacity: ${CHAT_EXECUTOR_QUEUE_CAPACITY:50}
 mybatis-plus:
   type-aliases-package: com.hmdp.entity # 别名扫描包
 logging:

@@ -28,6 +28,9 @@ public interface IUserService extends IService<User> {
      */
     Result login(LoginFormDTO loginForm, HttpSession session);
 
+    /** 删除 Redis 登录态，保证登出后旧 Token 立即失效。 */
+    void logout(String token);
+
     Result sign();
 
     Result signCount();

@@ -47,6 +47,14 @@ services:
     command: ["sh", "mqnamesrv"]
     ports:
       - "9876:9876"
+    restart: unless-stopped
+    healthcheck:
+      # 这里只验证 NameServer TCP 已接受连接，不能用 clusterList，否则会与 Broker 启动形成循环依赖。
+      test: ["CMD-SHELL", "bash -c 'echo > /dev/tcp/127.0.0.1/9876'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     networks: [merchantflow-internal]
 
   rocketmq-broker:
@@ -58,8 +66,17 @@ services:
       - "10911:10911"
     volumes:
       - ./docker/rocketmq/broker.conf:/tmp/broker.conf:ro
+    restart: unless-stopped
     depends_on:
-      - rocketmq-namesrv
+      rocketmq-namesrv:
+        condition: service_healthy
+    healthcheck:
+      # Broker 只有注册到 NameServer 并能被管理命令查询后才算可供消费者使用。
+      test: ["CMD-SHELL", "sh mqadmin clusterList -n rocketmq-namesrv:9876 | grep -q 'broker-a'"]
+      interval: 10s
+      timeout: 8s
+      retries: 12
+      start_period: 20s
     networks: [merchantflow-internal]
 
   backend:
@@ -67,6 +84,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: merchantflow-backend
+    # RocketMQ 客户端初始化的瞬时网络超时不应让业务永久离线；Docker 会在依赖恢复后重试启动。
+    restart: unless-stopped
     cpus: ${MERCHANTFLOW_CPUS:-1.0}
     environment:
       MYSQL_HOST: ${MYSQL_HOST:-mysql}
@@ -74,6 +93,8 @@ services:
       MYSQL_DATABASE: hmdp
       MYSQL_USERNAME: root
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      # MySQL 和本机演示脚本使用 Asia/Shanghai，JVM 必须显式统一时区。
+      TZ: Asia/Shanghai
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
@@ -82,7 +103,7 @@ services:
       AKSK_SECRET_KEY: ${AKSK_SECRET_KEY}
       CACHE_REDIS_DELETE_FORCE_FAIL: ${CACHE_REDIS_DELETE_FORCE_FAIL:-false}
       DEPLOYMENT_ENVIRONMENT: ${DEPLOYMENT_ENVIRONMENT:-local}
-      JAVA_TOOL_OPTIONS: -javaagent:/app/opentelemetry-javaagent.jar
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Shanghai -javaagent:/app/opentelemetry-javaagent.jar
       OTEL_SERVICE_NAME: merchantflow
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4317
       OTEL_EXPORTER_OTLP_PROTOCOL: grpc
@@ -99,7 +120,7 @@ services:
       redis:
         condition: service_healthy
       rocketmq-broker:
-        condition: service_started
+        condition: service_healthy
     networks:
       merchantflow-internal:
       aiops-observe:
@@ -116,6 +137,11 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks: [merchantflow-internal]
 
 networks:

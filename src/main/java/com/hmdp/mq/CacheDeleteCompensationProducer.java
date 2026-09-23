@@ -1,6 +1,7 @@
 package com.hmdp.mq;
 
 import com.hmdp.dto.CacheDeleteMessage;
+import com.hmdp.observability.MerchantFlowMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,9 @@ public class CacheDeleteCompensationProducer {
     @Resource
     private RocketMQTemplate rocketMQTemplate;
 
+    @Resource
+    private MerchantFlowMetrics merchantFlowMetrics;
+
     @Value("${hmdp.cache.delete-topic}")
     private String cacheDeleteTopic;
 
@@ -26,6 +30,9 @@ public class CacheDeleteCompensationProducer {
             log.warn("缓存删除失败，已发送 RocketMQ 补偿消息：{}", message);
         } catch (Exception e) {
             // 这里不能回滚数据库，只记录日志；Redis TTL 仍然是最终兜底。
+            merchantFlowMetrics.recordMqPublishFailure(
+                    MerchantFlowMetrics.FLOW_CACHE_DELETE_COMPENSATION
+            );
             log.error("发送缓存删除补偿消息失败，cacheKey={}", cacheKey, e);
         }
     }

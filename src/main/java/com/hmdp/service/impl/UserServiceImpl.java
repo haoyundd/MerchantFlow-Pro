@@ -83,6 +83,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         return Result.ok(token);
     }
 
+    /**
+     * 登出时删除 Redis Hash，而不是只清理 ThreadLocal，确保后续请求无法继续复用旧 Token。
+     */
+    @Override
+    public void logout(String token) {
+        if (token != null && !token.trim().isEmpty()) {
+            stringRedisTemplate.delete(LOGIN_USER_KEY + token.trim());
+        }
+    }
+
     @Override
     public Result sign() {
         // 获取当前登录用户
